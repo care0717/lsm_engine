@@ -19,6 +19,12 @@ fn handler(stream: TcpStream) -> Result<(), Error> {
 
         std::io::stdin().read_line(&mut input)?;
 
+        if input.split_whitespace().next().map_or(false, |v| v == "set") {
+            let mut body = String::new();
+            std::io::stdin().read_line(&mut body)?;
+            input = input + &*body;
+        }
+
         let mut writer = BufWriter::new(&stream);
         writer.write(input.as_bytes())?;
         writer.flush()?;

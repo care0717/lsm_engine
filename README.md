@@ -1,2 +1,3 @@
 # lsm_engine
-LSMツリーインデックスベースのKVS
+LSMツリーインデックスベースのKVS  
+memcachedプロトコル準拠
