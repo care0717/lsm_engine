@@ -1,5 +1,5 @@
+use std::io::{stdout, BufRead, BufReader, BufWriter, Error, Write};
 use std::net::TcpStream;
-use std::io::{Error, BufReader, BufWriter, Write, stdout, BufRead};
 
 fn main() {
     let stream = TcpStream::connect("127.0.0.1:33333");
@@ -7,7 +7,9 @@ fn main() {
         Ok(s) => {
             handler(s).unwrap_or_else(|error| eprintln!("{:?}", error));
         }
-        Err(e) =>  {eprintln!("error: {}", e)}
+        Err(e) => {
+            eprintln!("error: {}", e)
+        }
     }
 }
 
@@ -19,7 +21,11 @@ fn handler(stream: TcpStream) -> Result<(), Error> {
 
         std::io::stdin().read_line(&mut input)?;
 
-        if input.split_whitespace().next().map_or(false, |v| v == "set") {
+        if input
+            .split_whitespace()
+            .next()
+            .map_or(false, |v| v == "set")
+        {
             let mut body = String::new();
             std::io::stdin().read_line(&mut body)?;
             input = input + &*body;
@@ -33,9 +39,9 @@ fn handler(stream: TcpStream) -> Result<(), Error> {
         let nbytes = reader.read_line(&mut return_value)?;
         if nbytes == 0 {
             println!("receive EOF");
-            break
+            break;
         }
         print!("{}", return_value);
     }
-    return Ok(())
+    return Ok(());
 }
