@@ -52,7 +52,10 @@ impl<R: Read> Decoder<R> {
         if nbytes == 0 {
             return Err(Error::new(ErrorKind::UnexpectedEof, "got eof\n"));
         }
-        Ok(command::new_command_set(_key.to_string(), buf))
+        Ok(command::new_command_set(
+            _key.to_string(),
+            buf.trim().parse().unwrap(),
+        ))
     }
 
     fn decode_get(&mut self, commands: Vec<&str>) -> Result<command::Command, Error> {

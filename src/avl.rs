@@ -55,7 +55,9 @@ where
     current_tree: &'a AvlTree<T, U>,
 }
 
-impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator for AvlTreeSetIter<'a, T, U> {
+impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator
+    for AvlTreeSetIter<'a, T, U>
+{
     type Item = (&'a T, &'a U);
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -84,7 +86,9 @@ impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator for
         }
     }
 }
-impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> FromIterator<(T, U)> for AvlTreeMap<T, U> {
+impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> FromIterator<(T, U)>
+    for AvlTreeMap<T, U>
+{
     fn from_iter<I: IntoIterator<Item = (T, U)>>(iter: I) -> Self {
         let mut set = Self::new();
 
