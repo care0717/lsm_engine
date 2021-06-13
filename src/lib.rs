@@ -1,2 +1,3 @@
-pub mod command;
+mod avl;
+mod command;
 pub mod decoder;
