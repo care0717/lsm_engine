@@ -6,17 +6,17 @@ use std::iter::FromIterator;
 #[derive(Debug, PartialEq, Clone)]
 pub struct AvlTreeMap<T: Ord, U>
 where
-    T: Clone,
-    U: Clone,
+    T: Clone + Sync + Send,
+    U: Clone + Sync + Send,
 {
     root: AvlTree<T, U>,
 }
-impl<T: Ord + Clone, U: Clone> AvlTreeMap<T, U> {
+impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
     pub fn new() -> Self {
         Self { root: None }
     }
 }
-impl<T: Ord + Clone, U: Clone> Memtable<T, U> for AvlTreeMap<T, U> {
+impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> Memtable<T, U> for AvlTreeMap<T, U> {
     fn insert(&mut self, key: T, value: U) {
         if let Some(node) = &mut self.root {
             node.insert(key, value);
@@ -36,7 +36,7 @@ impl<T: Ord + Clone, U: Clone> Memtable<T, U> for AvlTreeMap<T, U> {
     }
 }
 
-impl<'a, T: 'a + Ord + Clone, U: Clone> AvlTreeMap<T, U> {
+impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
     fn iter(&'a self) -> AvlTreeSetIter<'a, T, U> {
         AvlTreeSetIter {
             prev_nodes: Vec::new(),
@@ -48,14 +48,14 @@ impl<'a, T: 'a + Ord + Clone, U: Clone> AvlTreeMap<T, U> {
 #[derive(Debug)]
 struct AvlTreeSetIter<'a, T: Ord, U>
 where
-    T: Clone,
-    U: Clone,
+    T: Clone + Sync + Send,
+    U: Clone + Sync + Send,
 {
     prev_nodes: Vec<&'a AvlNode<T, U>>,
     current_tree: &'a AvlTree<T, U>,
 }
 
-impl<'a, T: 'a + Ord + Clone, U: Clone> Iterator for AvlTreeSetIter<'a, T, U> {
+impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator for AvlTreeSetIter<'a, T, U> {
     type Item = (&'a T, &'a U);
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -84,7 +84,7 @@ impl<'a, T: 'a + Ord + Clone, U: Clone> Iterator for AvlTreeSetIter<'a, T, U> {
         }
     }
 }
-impl<T: Ord + Clone, U: Clone> FromIterator<(T, U)> for AvlTreeMap<T, U> {
+impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> FromIterator<(T, U)> for AvlTreeMap<T, U> {
     fn from_iter<I: IntoIterator<Item = (T, U)>>(iter: I) -> Self {
         let mut set = Self::new();
 
