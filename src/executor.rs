@@ -9,6 +9,8 @@ pub struct Executor {
     memtable: Arc<RwLock<Box<dyn Memtable<String, String>>>>,
     wal: Arc<RwLock<File>>,
 }
+
+const TOMBSTONE: i32 = -1;
 impl Executor {
     pub fn new(
         memtable: Arc<RwLock<Box<dyn Memtable<String, String>>>>,
@@ -39,6 +41,11 @@ impl Executor {
                 Ok(format!("VALUE {} {}", key, value))
             }
             Command::Delete { key } => {
+                let mut file = self.wal.write()?;
+                file.write(&TOMBSTONE.to_le_bytes())?;
+                file.write(key.as_bytes())?;
+                let key_len = key.len() as i16;
+                file.write(&key_len.to_le_bytes())?;
                 self.memtable.write()?.delete(&key);
                 Ok("DELETED".to_string())
             }

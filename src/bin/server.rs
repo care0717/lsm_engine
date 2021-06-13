@@ -12,6 +12,7 @@ use std::path::Path;
 use std::result::Result::Ok;
 use std::sync::{Arc, RwLock};
 use std::{fs, thread};
+use std::collections::HashSet;
 
 fn main() {
     let listener = TcpListener::bind("0.0.0.0:33333").expect("Error. failed to bind.");
@@ -86,6 +87,7 @@ fn recover(path: &Path) -> Result<AvlTreeMap<String, String>, Box<dyn Error>> {
         let mut buffer = Vec::new();
         wal.read_to_end(&mut buffer)?;
         let mut index = buffer.len();
+        let mut deleted_key = HashSet::new();
         while index > 0 {
             index -= size_of::<i16>();
             let key_len =
@@ -94,11 +96,15 @@ fn recover(path: &Path) -> Result<AvlTreeMap<String, String>, Box<dyn Error>> {
             let key = String::from_utf8(buffer[index..(index + key_len)].to_vec())?;
             index -= size_of::<i32>();
             let value_len =
-                i32::from_le_bytes(buffer[index..(index + size_of::<i32>())].try_into()?) as usize;
-            index -= value_len;
-            let value = String::from_utf8(buffer[index..(index + value_len)].to_vec())?;
-            if map.search(&key).is_none() {
-                map.insert(key, value);
+                i32::from_le_bytes(buffer[index..(index + size_of::<i32>())].try_into()?);
+            if value_len >= 0 {
+                index -= value_len as usize;
+                let value = String::from_utf8(buffer[index..(index + value_len as usize)].to_vec())?;
+                if map.search(&key).is_none() && !deleted_key.contains(&key) {
+                    map.insert(key, value);
+                }
+            } else {
+                deleted_key.insert(key);
             }
         }
     } else {
