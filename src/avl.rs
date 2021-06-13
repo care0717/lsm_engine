@@ -1,31 +1,40 @@
 mod tree;
 use crate::avl::tree::{AvlNode, AvlTree};
+use crate::command::Command::Set;
 use std::iter::FromIterator;
+use crate::memtable::Memtable;
 
 #[derive(Debug, PartialEq, Clone)]
-struct AvlTreeMap<T: Ord, U>
+pub struct AvlTreeMap<T: Ord, U>
 where
     T: Clone,
     U: Clone,
 {
     root: AvlTree<T, U>,
 }
-
 impl<T: Ord + Clone, U: Clone> AvlTreeMap<T, U> {
-    pub fn new() -> Self {
-        Self { root: None }
-    }
-    pub fn insert(&mut self, key: T, value: U) {
+pub fn new() -> Self {
+Self { root: None }
+}
+}
+impl<T: Ord + Clone, U: Clone> Memtable<T, U> for AvlTreeMap<T, U> {
+    fn insert(&mut self, key: T, value: U) {
         if let Some(node) = &mut self.root {
             node.insert(key, value);
         } else {
             self.root = Some(Box::new(AvlNode::new(key, value)));
         }
     }
-    pub fn delete(mut self, key: &T) {
-        self.root = self.root.map_or(None, |node| node.delete(key))
+    fn delete(self, key: &T) -> Self {
+        if let Some(node) = self.root {
+            Self {
+                root: node.delete(key),
+            }
+        } else {
+            Self { root: None }
+        }
     }
-    pub fn search(&self, key: &T) -> Option<&U> {
+    fn search(&self, key: &T) -> Option<&U> {
         self.root.as_ref().map_or(None, |node| node.search(key))
     }
 }
@@ -92,16 +101,17 @@ impl<T: Ord + Clone, U: Clone> FromIterator<(T, U)> for AvlTreeMap<T, U> {
 #[cfg(test)]
 mod tests {
     use crate::avl::AvlTreeMap;
+    use crate::memtable::Memtable;
 
     #[test]
     fn iter() {
-        let mut set = AvlTreeMap::new();
+        let mut map = AvlTreeMap::new();
 
         for i in (1..4 as usize).rev() {
-            set.insert(i, i + 1);
+            map.insert(i, i + 1);
         }
 
-        let mut iter = set.iter();
+        let mut iter = map.iter();
         assert_eq!(iter.next(), Some((&1, &2)));
         assert_eq!(iter.next(), Some((&2, &3)));
         assert_eq!(iter.next(), Some((&3, &4)));

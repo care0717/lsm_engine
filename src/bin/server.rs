@@ -2,6 +2,7 @@ use lsm_engine::decoder;
 use std::io::{stdout, BufWriter, Error, ErrorKind, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
+use lsm_engine::executor::Executor;
 
 fn main() {
     let listener = TcpListener::bind("0.0.0.0:33333").expect("Error. failed to bind.");
@@ -23,13 +24,14 @@ fn handler(stream: TcpStream) -> Result<(), Error> {
     println!("Connection from {}", stream.peer_addr()?);
     let mut decoder = decoder::new(&stream);
     let mut writer = BufWriter::new(&stream);
+    let mut executor = Executor::new_avl();
     loop {
         let decoded = decoder.decode();
         match decoded {
             Ok(c) => {
-                let result = c.execute();
-                print!("{}", result);
-                writer.write(result.as_bytes())?;
+                let result = executor.execute(c);
+                print!("{}\n", result);
+                writer.write(format!("{}\n", result).as_bytes())?;
                 writer.flush()?;
             }
             Err(e) => {

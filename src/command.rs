@@ -12,14 +12,3 @@ pub fn new_command_set<'a>(key: String, body: String) -> Command {
 pub fn new_command_get(key: String) -> Command {
     return Get { key };
 }
-
-impl Command {
-    pub fn execute(self) -> String {
-        match self {
-            Command::Set { key, body } => {
-                format!("{}\n", key)
-            }
-            Command::Get { key } => format!("{}\n", key),
-        }
-    }
-}
