@@ -26,6 +26,7 @@ impl<R: Read> Decoder<R> {
             .and_then(move |c| match c {
                 &"set" => self.decode_set(commands),
                 &"get" => self.decode_get(commands),
+                &"delete" => self.decode_delete(commands),
                 _ => Err(Error::new(
                     ErrorKind::InvalidInput,
                     format!("unknown command: {}\n", c),
@@ -63,5 +64,15 @@ impl<R: Read> Decoder<R> {
         }
         let _key = commands[1];
         Ok(command::new_command_get(_key.to_string()))
+    }
+    fn decode_delete(&mut self, commands: Vec<&str>) -> Result<command::Command, Error> {
+        if commands.len() != 2 {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "delete command length must be 2\n",
+            ));
+        }
+        let _key = commands[1];
+        Ok(command::new_command_delete(_key.to_string()))
     }
 }

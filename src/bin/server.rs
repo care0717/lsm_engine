@@ -1,8 +1,8 @@
 use lsm_engine::decoder;
+use lsm_engine::executor::Executor;
 use std::io::{stdout, BufWriter, Error, ErrorKind, Write};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
-use lsm_engine::executor::Executor;
 
 fn main() {
     let listener = TcpListener::bind("0.0.0.0:33333").expect("Error. failed to bind.");

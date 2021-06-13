@@ -1,8 +1,7 @@
 mod tree;
 use crate::avl::tree::{AvlNode, AvlTree};
-use crate::command::Command::Set;
-use std::iter::FromIterator;
 use crate::memtable::Memtable;
+use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AvlTreeMap<T: Ord, U>
@@ -13,9 +12,9 @@ where
     root: AvlTree<T, U>,
 }
 impl<T: Ord + Clone, U: Clone> AvlTreeMap<T, U> {
-pub fn new() -> Self {
-Self { root: None }
-}
+    pub fn new() -> Self {
+        Self { root: None }
+    }
 }
 impl<T: Ord + Clone, U: Clone> Memtable<T, U> for AvlTreeMap<T, U> {
     fn insert(&mut self, key: T, value: U) {
@@ -25,13 +24,11 @@ impl<T: Ord + Clone, U: Clone> Memtable<T, U> for AvlTreeMap<T, U> {
             self.root = Some(Box::new(AvlNode::new(key, value)));
         }
     }
-    fn delete(self, key: &T) -> Self {
-        if let Some(node) = self.root {
-            Self {
-                root: node.delete(key),
-            }
+    fn delete(&mut self, key: &T) {
+        if let Some(node) = &mut self.root {
+            self.root = node.clone().delete(key)
         } else {
-            Self { root: None }
+            self.root = None
         }
     }
     fn search(&self, key: &T) -> Option<&U> {
