@@ -35,26 +35,26 @@ fn handler(stream: TcpStream) -> Result<(), Error> {
         writer.write(input.as_bytes())?;
         writer.flush()?;
         let mut reader = BufReader::new(&stream);
+        let mut response = String::new();
         if input
             .split_whitespace()
             .next()
-            .map_or(false, |v| v == "get") {
+            .map_or(false, |v| v == "get")
+        {
             let nbytes = reader.read_line(&mut response)?;
             if nbytes == 0 {
                 println!("receive EOF");
                 break;
             }
             print!("{}", response);
-            continue
+            continue;
         }
-        let mut response = String::new();
         let nbytes = reader.read_line(&mut response)?;
         if nbytes == 0 {
             println!("receive EOF");
             break;
         }
         print!("{}", response);
-
     }
     return Ok(());
 }

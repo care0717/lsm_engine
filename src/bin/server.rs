@@ -1,11 +1,12 @@
+use anyhow::{Error, Result};
 use lsm_engine::avl::AvlTreeMap;
+use lsm_engine::binary::decode;
 use lsm_engine::decoder;
 use lsm_engine::executor::Executor;
 use lsm_engine::memtable::Memtable;
 use lsm_engine::value::Value;
 use std::collections::HashSet;
 use std::convert::TryInto;
-use anyhow::{Result, Error};
 use std::fs::{File, OpenOptions};
 use std::io::{stdout, BufWriter, ErrorKind, Read, Write};
 use std::mem::size_of;
@@ -89,20 +90,14 @@ fn recover(path: &Path) -> Result<AvlTreeMap<String, Value>> {
         let mut index = buffer.len();
         let mut deleted_key = HashSet::new();
         while index > 0 {
-            index -= size_of::<i16>();
-            let key_len =
-                i16::from_le_bytes(buffer[index..(index + size_of::<i16>())].try_into()?) as usize;
-            index -= key_len;
-            let key = String::from_utf8(buffer[index..(index + key_len)].to_vec())?;
             index -= size_of::<i32>();
-            let value_len =
-                i32::from_le_bytes(buffer[index..(index + size_of::<i32>())].try_into()?);
-            if value_len >= 0 {
-                index -= value_len as usize;
-                let value =
-                    Value::from_bytes(buffer[index..(index + value_len as usize)].to_vec())?;
+            let binary_len =
+                i32::from_le_bytes(buffer[index..(index + size_of::<i32>())].try_into()?) as usize;
+            index -= binary_len;
+            let (key, value) = decode(buffer[index..(index + binary_len)].to_vec())?;
+            if let Some(v) = value {
                 if map.search(&key).is_none() && !deleted_key.contains(&key) {
-                    map.insert(key, value);
+                    map.insert(key, v);
                 }
             } else {
                 deleted_key.insert(key);
