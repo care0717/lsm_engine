@@ -8,7 +8,7 @@ memcachedプロトコル準拠
 cargo run --bin server
 ```
 
-クライアント起動
+WIP: クライアント起動
 ```shell
 cargo run --bin client
 ```

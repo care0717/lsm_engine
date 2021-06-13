@@ -1,13 +1,14 @@
 use crate::command::Command::{Delete, Get, Set};
+use crate::value::Value;
 
 pub enum Command {
-    Set { key: String, body: String },
+    Set { key: String, value: Value },
     Get { key: String },
     Delete { key: String },
 }
 
-pub fn new_command_set<'a>(key: String, body: String) -> Command {
-    return Set { key, body };
+pub fn new_command_set<'a>(key: String, value: Value) -> Command {
+    return Set { key, value };
 }
 
 pub fn new_command_get(key: String) -> Command {
