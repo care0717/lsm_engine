@@ -34,10 +34,13 @@ impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> Memtable<T, U> for Av
     fn search(&self, key: &T) -> Option<&U> {
         self.root.as_ref().map_or(None, |node| node.search(key))
     }
+    fn to_vec(&self) -> Vec<(&T, &U)> {
+        self.iter().collect()
+    }
 }
 
-impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
-    fn iter(&'a self) -> AvlTreeSetIter<'a, T, U> {
+impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
+    fn iter(&self) -> AvlTreeSetIter<'_, T, U> {
         AvlTreeSetIter {
             prev_nodes: Vec::new(),
             current_tree: &self.root,

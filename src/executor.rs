@@ -29,7 +29,7 @@ impl Executor {
                 file.write(&binary)?;
                 let binary_len = binary.len() as i32;
                 file.write(&binary_len.to_le_bytes())?;
-                memtable.write()?.insert(key, value);
+                memtable.insert(key, value);
                 Ok("STORED".to_string())
             }
             Command::Get { key } => {
@@ -51,6 +51,10 @@ impl Executor {
                 memtable.delete(&key);
                 Ok("DELETED".to_string())
             }
+            Command::Stats {} => {
+                let memtable = self.memtable.read()?;
+                Ok(format!("STAT curr_items {}", memtable.to_vec().len()))
+            },
         }
     }
 }

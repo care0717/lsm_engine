@@ -34,8 +34,7 @@ impl Value {
         let data = String::from_utf8(vec[index..(index + data_len)].to_vec())?;
 
         index -= size_of::<usize>();
-        let exptime =
-            usize::from_le_bytes(vec[index..(index + size_of::<usize>())].try_into()?);
+        let exptime = usize::from_le_bytes(vec[index..(index + size_of::<usize>())].try_into()?);
 
         index -= size_of::<usize>();
         let flags = usize::from_le_bytes(vec[index..(index + size_of::<usize>())].try_into()?);
