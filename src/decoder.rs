@@ -17,14 +17,14 @@ impl<R: io::Read> Decoder<R> {
         let mut buf = String::new();
         let nbytes = self.reader.read_line(&mut buf)?;
         if nbytes == 0 {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "got eof\n"));
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "got eof"));
         }
         let commands: Vec<&str> = buf.trim().split_whitespace().collect();
 
         commands
             .clone()
             .first()
-            .ok_or(io::Error::new(io::ErrorKind::InvalidInput, "no content\n"))
+            .ok_or(io::Error::new(io::ErrorKind::InvalidInput, "no content"))
             .and_then(move |c| match c {
                 &"set" => self.decode_set(commands),
                 &"get" => self.decode_get(commands),
@@ -32,7 +32,7 @@ impl<R: io::Read> Decoder<R> {
                 &"stats" => Ok(Command::new_stats()),
                 _ => Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
-                    format!("unknown command: {}\n", c),
+                    format!("unknown command: {}", c),
                 )),
             })
     }
@@ -41,7 +41,7 @@ impl<R: io::Read> Decoder<R> {
         if commands.len() != 5 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "set command length must be 5\n",
+                "set command length must be 5",
             ));
         }
         let key = commands[1];
@@ -57,7 +57,7 @@ impl<R: io::Read> Decoder<R> {
         let mut buf = String::new();
         let nbytes = self.reader.read_line(&mut buf)?;
         if nbytes == 0 {
-            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "got eof\n"));
+            return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "got eof"));
         }
         let value = Value::new(buf.trim().parse().unwrap(), flags, exptime);
         Ok(Command::new_set(key.to_string(), value))
@@ -67,7 +67,7 @@ impl<R: io::Read> Decoder<R> {
         if commands.len() != 2 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "get command length must be 2\n",
+                "get command length must be 2",
             ));
         }
         let key = commands[1];
@@ -77,7 +77,7 @@ impl<R: io::Read> Decoder<R> {
         if commands.len() != 2 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "delete command length must be 2\n",
+                "delete command length must be 2",
             ));
         }
         let key = commands[1];

@@ -3,12 +3,17 @@ LSMツリーインデックスベースのKVS
 memcachedプロトコル準拠
 
 # usage 
-サーバー起動
+## 起動
 ```shell
-cargo run --bin server
+RUST_LOG=DEBUG cargo run --bin server
 ```
 
-WIP: クライアント起動
+## クライアント
 ```shell
-cargo run --bin client
+echo 'set hoge 0 0 11\nhello world' | nc localhost 33333
+echo 'get hoge' | nc localhost 33333
+```
+or
+```shell
+telnet localhost 33333
 ```

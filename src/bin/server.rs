@@ -15,9 +15,14 @@ use std::path::Path;
 use std::result::Result::Ok;
 use std::sync::{Arc, RwLock};
 use std::{fs, thread};
+#[macro_use]
+extern crate log;
 
 fn main() {
-    let listener = TcpListener::bind("0.0.0.0:33333").expect("Error. failed to bind.");
+    env_logger::init();
+    let address = "0.0.0.0:33333";
+    let listener = TcpListener::bind(address).expect("Error. failed to bind.");
+    info!("Listening on {}", address);
     let wal_path = Path::new("data/wal/wal.bin");
     let map = recover(wal_path).unwrap();
     let memtable: Arc<RwLock<Box<dyn Memtable<String, Value>>>> =
@@ -32,13 +37,13 @@ fn main() {
     for streams in listener.incoming() {
         match streams {
             Err(e) => {
-                eprintln!("error: {}", e)
+                error!("listener incoming error: {}", e)
             }
             Ok(stream) => {
                 let memtable = memtable.clone();
                 let wal = wal.clone();
                 thread::spawn(move || {
-                    handler(stream, memtable, wal).unwrap_or_else(|error| eprintln!("{:?}", error));
+                    handler(stream, memtable, wal).unwrap_or_else(|error| debug!("{:?}", error));
                 });
             }
         }
@@ -50,7 +55,7 @@ fn handler(
     memtable: Arc<RwLock<Box<dyn Memtable<String, Value>>>>,
     wal: Arc<RwLock<File>>,
 ) -> Result<()> {
-    println!("Connection from {}", stream.peer_addr()?);
+    debug!("Connection from {}", stream.peer_addr()?);
     let mut decoder = decoder::new(&stream);
     let mut writer = BufWriter::new(&stream);
     let mut executor = Executor::new(memtable, wal);
@@ -59,22 +64,24 @@ fn handler(
         match decoded {
             Ok(c) => match executor.execute(c) {
                 Ok(result) => {
-                    print!("{}\n", result);
+                    debug!("write response: {}", result);
                     writer.write(format!("{}\n", result).as_bytes())?;
                     writer.flush()?;
                 }
                 Err(e) => {
-                    print!("{}\n", e);
-                    writer.write(format!("{}\n", e).as_bytes())?;
+                    let error = format!("[error] {}", e);
+                    debug!("write response: {}", error);
+                    writer.write(format!("{}\n", error).as_bytes())?;
                     writer.flush()?;
                 }
             },
             Err(e) => {
-                print!("{}", e);
                 if e.kind() == ErrorKind::UnexpectedEof {
                     return Err(Error::from(e));
                 }
-                writer.write(format!("{}\n", e.to_string()).as_bytes())?;
+                let error = format!("[error] {}", e);
+                debug!("write response write: {}", error);
+                writer.write(format!("{}\n", error).as_bytes())?;
                 writer.flush()?;
             }
         }

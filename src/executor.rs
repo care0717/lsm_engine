@@ -54,7 +54,7 @@ impl Executor {
             Command::Stats {} => {
                 let memtable = self.memtable.read()?;
                 Ok(format!("STAT curr_items {}", memtable.to_vec().len()))
-            },
+            }
         }
     }
 }
