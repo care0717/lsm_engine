@@ -1,35 +1,22 @@
 use crate::command::Command;
 use crate::memtable::Memtable;
 
-use crate::binary::encode;
-use crate::value::Value;
 use std::error::Error;
-use std::fs::File;
-use std::io::Write;
 use std::sync::{Arc, RwLock};
 
 pub struct Executor {
-    memtable: Arc<RwLock<Box<dyn Memtable<String, Value>>>>,
-    wal: Arc<RwLock<File>>,
+    memtable: Arc<RwLock<Box<dyn Memtable>>>,
 }
 
 impl Executor {
-    pub fn new(
-        memtable: Arc<RwLock<Box<dyn Memtable<String, Value>>>>,
-        wal: Arc<RwLock<File>>,
-    ) -> Self {
-        Self { memtable, wal }
+    pub fn new(memtable: Arc<RwLock<Box<dyn Memtable>>>) -> Self {
+        Self { memtable }
     }
     pub fn execute(&mut self, command: Command) -> Result<String, Box<dyn Error + '_>> {
         match command {
             Command::Set { key, value } => {
-                let mut file = self.wal.write()?;
                 let mut memtable = self.memtable.write()?;
-                let binary = encode(&key, Option::from(&value));
-                file.write(&binary)?;
-                let binary_len = binary.len() as i32;
-                file.write(&binary_len.to_le_bytes())?;
-                memtable.insert(key, value);
+                memtable.insert(key, value).unwrap();
                 Ok("STORED".to_string())
             }
             Command::Get { key } => {
@@ -42,13 +29,8 @@ impl Executor {
                 Ok(format!("{}END", formatted_value))
             }
             Command::Delete { key } => {
-                let mut file = self.wal.write()?;
                 let mut memtable = self.memtable.write()?;
-                let binary = encode(&key, None);
-                file.write(&binary)?;
-                let binary_len = binary.len() as i32;
-                file.write(&binary_len.to_le_bytes())?;
-                memtable.delete(&key);
+                memtable.delete(&key).unwrap();
                 Ok("DELETED".to_string())
             }
             Command::Stats {} => {

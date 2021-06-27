@@ -1,47 +1,43 @@
 mod tree;
 use crate::avl::tree::{AvlNode, AvlTree};
-use crate::memtable::Memtable;
 use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AvlTreeMap<T: Ord, U>
+pub struct AvlTreeMap<K: Ord, V>
 where
-    T: Clone + Sync + Send,
-    U: Clone + Sync + Send,
+    K: Clone + Sync + Send,
+    V: Clone + Sync + Send,
 {
-    root: AvlTree<T, U>,
+    root: AvlTree<K, V>,
 }
-impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
+impl<K: Ord + Clone + Sync + Send, V: Clone + Sync + Send> AvlTreeMap<K, V> {
     pub fn new() -> Self {
         Self { root: None }
     }
 }
-impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> Memtable<T, U> for AvlTreeMap<T, U> {
-    fn insert(&mut self, key: T, value: U) {
+impl<K: Ord + Clone + Sync + Send, V: Clone + Sync + Send> AvlTreeMap<K, V> {
+    pub fn insert(&mut self, key: K, value: V) {
         if let Some(node) = &mut self.root {
             node.insert(key, value);
         } else {
             self.root = Some(Box::new(AvlNode::new(key, value)));
         }
     }
-    fn delete(&mut self, key: &T) {
+    fn delete(&mut self, key: &K) {
         if let Some(node) = &mut self.root {
             self.root = node.clone().delete(key)
         } else {
             self.root = None
         }
     }
-    fn search(&self, key: &T) -> Option<&U> {
+    pub fn search(&self, key: &K) -> Option<&V> {
         self.root.as_ref().map_or(None, |node| node.search(key))
-    }
-    fn to_vec(&self) -> Vec<(&T, &U)> {
-        self.iter().collect()
     }
 }
 
-impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
-    fn iter(&self) -> AvlTreeSetIter<'_, T, U> {
-        AvlTreeSetIter {
+impl<K: Ord + Clone + Sync + Send, V: Clone + Sync + Send> AvlTreeMap<K, V> {
+    pub fn iter(&self) -> Iter<'_, K, V> {
+        Iter {
             prev_nodes: Vec::new(),
             current_tree: &self.root,
         }
@@ -49,19 +45,17 @@ impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> AvlTreeMap<T, U> {
 }
 
 #[derive(Debug)]
-struct AvlTreeSetIter<'a, T: Ord, U>
+pub struct Iter<'a, K: Ord, V>
 where
-    T: Clone + Sync + Send,
-    U: Clone + Sync + Send,
+    K: Clone + Sync + Send,
+    V: Clone + Sync + Send,
 {
-    prev_nodes: Vec<&'a AvlNode<T, U>>,
-    current_tree: &'a AvlTree<T, U>,
+    prev_nodes: Vec<&'a AvlNode<K, V>>,
+    current_tree: &'a AvlTree<K, V>,
 }
 
-impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator
-    for AvlTreeSetIter<'a, T, U>
-{
-    type Item = (&'a T, &'a U);
+impl<'a, K: 'a + Ord + Clone + Sync + Send, V: Clone + Sync + Send> Iterator for Iter<'a, K, V> {
+    type Item = (&'a K, &'a V);
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             match *self.current_tree {
@@ -89,10 +83,10 @@ impl<'a, T: 'a + Ord + Clone + Sync + Send, U: Clone + Sync + Send> Iterator
         }
     }
 }
-impl<T: Ord + Clone + Sync + Send, U: Clone + Sync + Send> FromIterator<(T, U)>
-    for AvlTreeMap<T, U>
+impl<K: Ord + Clone + Sync + Send, V: Clone + Sync + Send> FromIterator<(K, V)>
+    for AvlTreeMap<K, V>
 {
-    fn from_iter<I: IntoIterator<Item = (T, U)>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         let mut set = Self::new();
 
         for (key, value) in iter {

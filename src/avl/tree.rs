@@ -2,20 +2,20 @@ use std::cmp::{max, Ordering};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AvlNode<T: Ord, U>
+pub struct AvlNode<K: Ord, V>
 where
-    T: Clone,
-    U: Clone,
+    K: Clone,
+    V: Clone,
 {
-    pub key: T,
-    pub value: U,
+    pub key: K,
+    pub value: V,
     height: usize,
-    pub left: AvlTree<T, U>,
-    pub right: AvlTree<T, U>,
+    pub left: AvlTree<K, V>,
+    pub right: AvlTree<K, V>,
 }
-pub type AvlTree<T, U> = Option<Box<AvlNode<T, U>>>;
-impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
-    pub fn new(key: T, value: U) -> Self {
+pub type AvlTree<K, V> = Option<Box<AvlNode<K, V>>>;
+impl<K: Ord + Clone, V: Clone> AvlNode<K, V> {
+    pub fn new(key: K, value: V) -> Self {
         Self {
             key,
             value,
@@ -24,7 +24,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
             height: 1,
         }
     }
-    pub fn insert(&mut self, key: T, value: U) {
+    pub fn insert(&mut self, key: K, value: V) {
         match self.key.cmp(&key) {
             Ordering::Less => {
                 if let Some(node) = &mut self.right {
@@ -48,7 +48,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
         }
         self.rebalance();
     }
-    pub fn delete(mut self, key: &T) -> AvlTree<T, U> {
+    pub fn delete(mut self, key: &K) -> AvlTree<K, V> {
         match self.key.cmp(key) {
             Ordering::Less => {
                 if let Some(right) = self.right {
@@ -68,7 +68,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
         }
         return Option::from(Box::new(self));
     }
-    fn delete_root(self) -> AvlTree<T, U> {
+    fn delete_root(self) -> AvlTree<K, V> {
         match (self.left, self.right) {
             (None, None) => None,
             (Some(l), None) => Option::from(l),
@@ -76,7 +76,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
             (Some(l), Some(r)) => Option::from(Box::new(r.combine(l))),
         }
     }
-    fn combine(self, left: Box<AvlNode<T, U>>) -> AvlNode<T, U> {
+    fn combine(self, left: Box<AvlNode<K, V>>) -> AvlNode<K, V> {
         let (rest, max_key, max_value) = left.delete_max();
         let mut new_root = Self::new(max_key, max_value);
         new_root.left = rest;
@@ -84,7 +84,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
         new_root.rebalance();
         new_root
     }
-    fn delete_max(mut self) -> (AvlTree<T, U>, T, U) {
+    fn delete_max(mut self) -> (AvlTree<K, V>, K, V) {
         match self.right {
             Some(right) => {
                 let (rest, key, value) = right.delete_max();
@@ -144,7 +144,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
         self.update_height()
     }
 
-    pub fn search(&self, key: &T) -> Option<&U> {
+    pub fn search(&self, key: &K) -> Option<&V> {
         match self.key.cmp(key) {
             Ordering::Less => self.right.as_ref().map_or(None, |node| node.search(key)),
             Ordering::Greater => self.left.as_ref().map_or(None, |node| node.search(key)),
@@ -152,7 +152,7 @@ impl<T: Ord + Clone, U: Clone> AvlNode<T, U> {
         }
     }
 }
-impl<T: Ord + Display + Clone, U: Clone> AvlNode<T, U> {
+impl<K: Ord + Display + Clone, V: Clone> AvlNode<K, V> {
     fn print(&self) {
         self.print_tree(0);
     }
