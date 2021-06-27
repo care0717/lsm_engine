@@ -2,14 +2,16 @@ use crate::avl::AvlTreeMap;
 use crate::value::Value;
 use crate::wal::Wal;
 use anyhow::Result;
-use std::error::Error;
+use log::info;
 use std::iter::FromIterator;
 
 pub trait Memtable: Sync + Send {
-    fn insert(&mut self, key: String, value: Value) -> Result<(), Box<dyn Error + '_>>;
-    fn delete(&mut self, key: &String) -> Result<(), Box<dyn Error + '_>>;
-    fn search(&self, key: &String) -> Option<&Value>;
+    fn insert(&mut self, key: String, value: Value) -> Result<()>;
+    fn delete(&mut self, key: &String) -> Result<()>;
+    fn search(&self, key: &String) -> Option<Option<&Value>>;
     fn to_vec(&self) -> Vec<(&String, &Value)>;
+    fn to_records(&self) -> Vec<(&String, Option<&Value>)>;
+    fn clear(&mut self) -> Result<()>;
 }
 
 pub struct AvlMemtable {
@@ -26,25 +28,20 @@ impl AvlMemtable {
     }
 }
 impl Memtable for AvlMemtable {
-    fn insert(&mut self, key: String, value: Value) -> Result<(), Box<dyn Error + '_>> {
+    fn insert(&mut self, key: String, value: Value) -> Result<()> {
         self.wal.write(&key, Option::from(&value))?;
         self.map.insert(key, Option::from(value));
         Ok(())
     }
 
-    fn delete(&mut self, key: &String) -> Result<(), Box<dyn Error + '_>> {
+    fn delete(&mut self, key: &String) -> Result<()> {
         self.wal.write(key, None)?;
         self.map.insert((*key).clone(), None);
         Ok(())
     }
 
-    fn search(&self, key: &String) -> Option<&Value> {
-        if let Some(value) = self.map.search(key) {
-            if let Some(v) = value {
-                return Option::from(v);
-            }
-        }
-        None
+    fn search(&self, key: &String) -> Option<Option<&Value>> {
+        self.map.search(key).map(|value| value.as_ref())
     }
 
     fn to_vec(&self) -> Vec<(&String, &Value)> {
@@ -54,5 +51,19 @@ impl Memtable for AvlMemtable {
             }
             state
         })
+    }
+
+    fn to_records(&self) -> Vec<(&String, Option<&Value>)> {
+        self.map
+            .iter()
+            .map(|(key, value)| (key, value.as_ref()))
+            .collect()
+    }
+
+    fn clear(&mut self) -> Result<()> {
+        self.wal.clear()?;
+        self.map = AvlTreeMap::new();
+        info!("clear map");
+        Ok(())
     }
 }

@@ -2,13 +2,14 @@ use anyhow::{Error, Result};
 use lsm_engine::decoder;
 use lsm_engine::executor::Executor;
 use lsm_engine::memtable::{AvlMemtable, Memtable};
+use lsm_engine::sstable::{HashMapSSTable, SSTable};
 use lsm_engine::wal::Wal;
 use std::io::{stdout, BufWriter, ErrorKind, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::result::Result::Ok;
 use std::sync::{Arc, RwLock};
-use std::{thread, fs};
+use std::{fs, thread};
 
 #[macro_use]
 extern crate log;
@@ -28,6 +29,13 @@ fn main() {
     let avl_memtable = AvlMemtable::new(wal).unwrap();
     let memtable: Arc<RwLock<Box<dyn Memtable>>> = Arc::new(RwLock::new(Box::new(avl_memtable)));
 
+    let sstable_dir = Path::new("data/sstable");
+    if !sstable_dir.exists() {
+        fs::create_dir_all(sstable_dir).unwrap();
+    }
+    let hashmap_sstable = HashMapSSTable::new(sstable_dir).unwrap();
+    let sstable: Arc<RwLock<Box<dyn SSTable>>> = Arc::new(RwLock::new(Box::new(hashmap_sstable)));
+
     for streams in listener.incoming() {
         match streams {
             Err(e) => {
@@ -35,19 +43,25 @@ fn main() {
             }
             Ok(stream) => {
                 let memtable = memtable.clone();
+                let sstable = sstable.clone();
                 thread::spawn(move || {
-                    handler(stream, memtable).unwrap_or_else(|error| debug!("{:?}", error));
+                    handler(stream, memtable, sstable)
+                        .unwrap_or_else(|error| debug!("{:?}", error));
                 });
             }
         }
     }
 }
 
-fn handler(stream: TcpStream, memtable: Arc<RwLock<Box<dyn Memtable>>>) -> Result<()> {
+fn handler(
+    stream: TcpStream,
+    memtable: Arc<RwLock<Box<dyn Memtable>>>,
+    sstable: Arc<RwLock<Box<dyn SSTable>>>,
+) -> Result<()> {
     debug!("Connection from {}", stream.peer_addr()?);
     let mut decoder = decoder::new(&stream);
     let mut writer = BufWriter::new(&stream);
-    let mut executor = Executor::new(memtable);
+    let mut executor = Executor::new(memtable, sstable);
     loop {
         let decoded = decoder.decode();
         match decoded {
