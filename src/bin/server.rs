@@ -8,7 +8,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::result::Result::Ok;
 use std::sync::{Arc, RwLock};
-use std::thread;
+use std::{thread, fs};
 
 #[macro_use]
 extern crate log;
@@ -18,8 +18,13 @@ fn main() {
     let address = "0.0.0.0:33333";
     let listener = TcpListener::bind(address).expect("Error. failed to bind.");
     info!("Listening on {}", address);
-
-    let wal = Wal::new(Path::new("data/wal/wal.bin")).unwrap();
+    let wal_path = Path::new("data/wal/wal.bin");
+    if let Some(parent) = wal_path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent).unwrap();
+        }
+    }
+    let wal = Wal::new(wal_path).unwrap();
     let avl_memtable = AvlMemtable::new(wal).unwrap();
     let memtable: Arc<RwLock<Box<dyn Memtable>>> = Arc::new(RwLock::new(Box::new(avl_memtable)));
 
